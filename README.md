@@ -1,10 +1,33 @@
 # WpfExceptionViewer2
-Copy of https://www.codeproject.com/Tips/469452/WPF-ExceptionViewer
+##### Copy of https://www.codeproject.com/Tips/469452/WPF-ExceptionViewer
 
-[![License](https://www.codeproject.com/info/cpol10.aspx)](LICENSE.md)
-[![NuGet](https://img.shields.io/nuget/v/Gu.Wpf.Geometry.svg)](https://www.nuget.org/packages/Gu.Wpf.Geometry/)
+##### Licence: https://www.codeproject.com/info/cpol10.aspx
+##### Nuget: https://www.nuget.org/packages/WpfExceptionViewer2
 
 # Howto Integrate
 ## App.xaml
 
-## Demo
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/WpfExceptionViewer2;component/DarkColors.xaml" />
+                
+                <!--or bright colors-->
+                <!--<ResourceDictionary Source="pack://application:,,,/WpfExceptionViewer2;component/BrightColors.xaml" />-->
+                
+                <!--or custom colors-->
+                <!--
+                <SolidColorBrush x:Key="BackgroundBrush"
+                     options:Freeze="True"
+                     Color="Pink" />
+
+                <SolidColorBrush x:Key="ForegroundBrush"
+                     options:Freeze="True"
+                     Color="Green" />
+                -->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+
+## Invoke Dialog
+
+  WpfExceptionViewer2.ExceptionViewer.DefaultTitle = "Sorry";
+  new WpfExceptionViewer2.ExceptionViewer(ex.Message, ex).Show();
