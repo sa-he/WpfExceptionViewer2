@@ -16,9 +16,9 @@ namespace WpfExceptionViewer2
     /// </summary>
     public partial class ExceptionViewer : Window
     {
-        private static string _defaultTitle;
+        private static string? _defaultTitle;
 
-        private static string _product;
+        private static string? _product;
 
         // This is used to dynamically calculate the mainGrid.MaxWidth when the Window is resized,
         // since I can't quite get the behavior I want without it.  See CalcMaxTreeWidth().
@@ -46,7 +46,7 @@ namespace WpfExceptionViewer2
         /// uses its Style and will appear centered on the Owner.  You can override this before
         /// calling ShowDialog().
         /// </summary>
-        public ExceptionViewer(string headerMessage, Exception e, Window owner)
+        public ExceptionViewer(string headerMessage, Exception e, Window? owner)
         {
             InitializeComponent();
 
@@ -57,9 +57,9 @@ namespace WpfExceptionViewer2
 
                 // This seems to make the window appear on the same monitor as the owner.
                 Owner = owner;
-
-                WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
+
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             docViewer.Background = treeView1.Background;
 
@@ -123,9 +123,9 @@ namespace WpfExceptionViewer2
         }
 
         // Tries to get the assembly to extract the product name from.
-        private static Assembly GetAppAssembly()
+        private static Assembly? GetAppAssembly()
         {
-            Assembly _appAssembly = null;
+            Assembly? _appAssembly = null;
 
             try
             {
@@ -159,7 +159,7 @@ namespace WpfExceptionViewer2
             {
                 var _appAssembly = GetAppAssembly();
 
-                var customAttributes = _appAssembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
+                var customAttributes = _appAssembly?.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
 
                 if ((customAttributes != null) && (customAttributes.Length > 0))
                 {
@@ -172,32 +172,42 @@ namespace WpfExceptionViewer2
             return result;
         }
 
-        private static string RenderDictionary(IDictionary data)
+        private static string RenderDictionary(IDictionary? data)
         {
             var result = new StringBuilder();
 
-            foreach (var key in data.Keys)
+            if (data is not null)
             {
-                if (key != null && data[key] != null)
+                foreach (var key in data.Keys)
                 {
-                    result.AppendLine(key.ToString() + " = " + data[key].ToString());
+                    if (key is not null && data[key] is not null)
+                    {
+                        result.AppendLine(key.ToString() + " = " + data[key]!.ToString());
+                    }
                 }
             }
 
-            if (result.Length > 0) result.Length = result.Length - 1;
+            if (result.Length > 0)
+                result.Length = result.Length - 1;
+
             return result.ToString();
         }
 
-        private static string RenderEnumerable(IEnumerable data)
+        private static string RenderEnumerable(IEnumerable? data)
         {
             var result = new StringBuilder();
 
-            foreach (var obj in data)
+            if (data is not null)
             {
-                result.AppendFormat("{0}\n", obj);
+                foreach (var obj in data)
+                {
+                    result.AppendFormat("{0}\n", obj);
+                }
             }
 
-            if (result.Length > 0) result.Length = result.Length - 1;
+            if (result.Length > 0)
+                result.Length = result.Length - 1;
+
             return result.ToString();
         }
 
@@ -273,8 +283,11 @@ namespace WpfExceptionViewer2
 
         // Adds the string to the list of Inlines, substituting
         // LineBreaks for an newline chars found.
-        private void AddLines(List<Inline> inlines, string str)
+        private void AddLines(List<Inline> inlines, string? str)
         {
+            if (str is null)
+                return;
+
             var lines = str.Split('\n');
 
             inlines.Add(new Run(lines[0].Trim('\r')));
@@ -286,7 +299,7 @@ namespace WpfExceptionViewer2
             }
         }
 
-        private void AddProperty(List<Inline> inlines, string propName, object propVal)
+        private void AddProperty(List<Inline> inlines, string propName, object? propVal)
         {
             inlines.Add(new LineBreak());
             inlines.Add(new LineBreak());
@@ -305,7 +318,7 @@ namespace WpfExceptionViewer2
             }
             else
             {
-                inlines.Add(new Run(propVal.ToString()));
+                inlines.Add(new Run(propVal?.ToString() ?? "NULL"));
             }
         }
 
@@ -326,7 +339,7 @@ namespace WpfExceptionViewer2
             doc.FontFamily = treeView1.FontFamily;
             doc.TextAlignment = TextAlignment.Left;
 
-            foreach (TreeViewItem treeItem in treeView1.Items)
+            foreach (TreeViewItem? treeItem in treeView1.Items)
             {
                 if (inlines.Any())
                 {
@@ -337,7 +350,8 @@ namespace WpfExceptionViewer2
                     inlines.Add(new LineBreak());
                 }
 
-                inlines.AddRange(treeItem.Tag as List<Inline>);
+                if (treeItem?.Tag is List<Inline> lines)
+                    inlines.AddRange(lines);
             }
 
             para.Inlines.AddRange(inlines);
@@ -352,7 +366,8 @@ namespace WpfExceptionViewer2
             using (Stream stream = new MemoryStream())
             {
                 range.Save(stream, DataFormats.Rtf);
-                data.SetData(DataFormats.Rtf, Encoding.UTF8.GetString((stream as MemoryStream).ToArray()));
+                if (stream is MemoryStream ms)
+                    data.SetData(DataFormats.Rtf, Encoding.UTF8.GetString(ms.ToArray()));
             }
 
             data.SetData(DataFormats.StringFormat, range.Text);
@@ -367,7 +382,7 @@ namespace WpfExceptionViewer2
         // Builds the tree in the left pane.
         // Each TreeViewItem.Tag will contain a list of Inlines
         // to display in the right-hand pane When it is selected.
-        private void BuildTree(Exception e, string summaryMessage)
+        private void BuildTree(Exception? e, string summaryMessage)
         {
             // The first node in the tree contains the summary message and all the
             // nested exception messages.
@@ -412,19 +427,22 @@ namespace WpfExceptionViewer2
         }
 
         // Determines the page width for the Inlilness that causes no wrapping.
-        private double CalcNoWrapWidth(IEnumerable<Inline> inlines)
+        private double CalcNoWrapWidth(IEnumerable<Inline>? inlines)
         {
             double pageWidth = 0;
             var tb = new TextBlock();
             var size = new Size(double.PositiveInfinity, double.PositiveInfinity);
 
-            foreach (var inline in inlines)
+            if (inlines is not null)
             {
-                tb.Inlines.Clear();
-                tb.Inlines.Add(inline);
-                tb.Measure(size);
+                foreach (var inline in inlines)
+                {
+                    tb.Inlines.Clear();
+                    tb.Inlines.Add(inline);
+                    tb.Measure(size);
 
-                if (tb.DesiredSize.Width > pageWidth) pageWidth = tb.DesiredSize.Width;
+                    if (tb.DesiredSize.Width > pageWidth) pageWidth = tb.DesiredSize.Width;
+                }
             }
 
             return pageWidth;
@@ -463,7 +481,7 @@ namespace WpfExceptionViewer2
         {
             if (treeView1.SelectedItem != null)
             {
-                var inlines = (treeView1.SelectedItem as TreeViewItem).Tag as List<Inline>;
+                var inlines = (treeView1.SelectedItem as TreeViewItem)?.Tag as List<Inline>;
                 var doc = new FlowDocument
                 {
                     FontSize = _small,
