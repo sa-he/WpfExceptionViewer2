@@ -1,23 +1,37 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Linq;
 using System.Windows.Media;
-using System.IO;
 
-namespace ExceptionViewerDemo
+namespace WpfExceptionViewer2
 {
     /// <summary>
     /// A WPF window for viewing Exceptions and inner Exceptions, including all their properties.
     /// </summary>
     public partial class ExceptionViewer : Window
     {
+        private static string _defaultTitle;
+
+        private static string _product;
+
+        // This is used to dynamically calculate the mainGrid.MaxWidth when the Window is resized,
+        // since I can't quite get the behavior I want without it.  See CalcMaxTreeWidth().
+        private double _chromeWidth;
+
+        private double _large;
+
+        private double _med;
+
+        // Font sizes based on the "normal" size.
+        private double _small;
+
         /// <summary>
         /// The exception and header message cannot be null.  If owner is specified, this window
         /// uses its Style and will appear centered on the Owner.  You can override this before
@@ -67,8 +81,14 @@ namespace ExceptionViewerDemo
             BuildTree(e, headerMessage);
         }
 
+        public static Brush DefaultPaneBrush
+        {
+            get;
+            set;
+        }
+
         /// <summary>
-        /// The default title to use for the ExceptionViewer window.  Automatically initialized 
+        /// The default title to use for the ExceptionViewer window.  Automatically initialized
         /// to "Error - [ProductName]" where [ProductName] is taken from the application's
         /// AssemblyProduct attribute (set in the AssemblyInfo.cs file).  You can change this
         /// default, or ignore it and set Title yourself before calling ShowDialog().
@@ -98,14 +118,8 @@ namespace ExceptionViewerDemo
             }
         }
 
-        public static Brush DefaultPaneBrush
-        {
-            get;
-            set;
-        }
-
         /// <summary>
-        /// Gets the value of the AssemblyProduct attribute of the app.  
+        /// Gets the value of the AssemblyProduct attribute of the app.
         /// If unable to lookup the attribute, returns an empty string.
         /// </summary>
         public static string Product
@@ -119,52 +133,6 @@ namespace ExceptionViewerDemo
 
                 return _product;
             }
-        }
-
-        static string _defaultTitle;
-        static string _product;
-
-        // Font sizes based on the "normal" size.
-        double _small;
-        double _med;
-        double _large;
-
-        // This is used to dynamically calculate the mainGrid.MaxWidth when the Window is resized,
-        // since I can't quite get the behavior I want without it.  See CalcMaxTreeWidth().
-        double _chromeWidth;
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            // The grid column used for the tree started with Width="Auto" so it is now exactly
-            // wide enough to fit the longest exception (up to the MaxWidth set in XAML).
-            // Changing the width to a fixed pixel value prevents it from changing if the user
-            // resizes the window.
-
-            treeCol.Width = new GridLength(treeCol.ActualWidth, GridUnitType.Pixel);
-            _chromeWidth = ActualWidth - mainGrid.ActualWidth;
-            CalcMaxTreeWidth();
-        }        
-
-        // Initializes the Product property.
-        static string GetProductName()
-        {
-            string result = "";
-
-            try
-            {
-                Assembly _appAssembly = GetAppAssembly();
-
-                object[] customAttributes = _appAssembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
-
-                if ((customAttributes != null) && (customAttributes.Length > 0))
-                {
-                    result = ((AssemblyProductAttribute)customAttributes[0]).Product;
-                }
-            }
-            catch 
-            { }
-
-            return result;
         }
 
         // Tries to get the assembly to extract the product name from.
@@ -195,78 +163,60 @@ namespace ExceptionViewerDemo
             return _appAssembly;
         }
 
-        // Builds the tree in the left pane.
-        // Each TreeViewItem.Tag will contain a list of Inlines
-        // to display in the right-hand pane When it is selected.
-        void BuildTree(Exception e, string summaryMessage)
+        // Initializes the Product property.
+        private static string GetProductName()
         {
-            // The first node in the tree contains the summary message and all the
-            // nested exception messages.
-            
-            var inlines = new List<Inline>();
-            var firstItem = new TreeViewItem();
-            firstItem.Header = "All Messages";
-            treeView1.Items.Add(firstItem);
+            string result = "";
 
-            var inline = new Bold(new Run(summaryMessage));
-            inline.FontSize = _large;
-            inlines.Add(inline);
-
-            // Now add top-level nodes for each exception while building
-            // the contents of the first node.
-            while (e != null)
+            try
             {
-                inlines.Add(new LineBreak());
-                inlines.Add(new LineBreak());
-                AddLines(inlines, e.Message);
+                Assembly _appAssembly = GetAppAssembly();
 
-                AddException(e);
-                e = e.InnerException;
+                object[] customAttributes = _appAssembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
+
+                if ((customAttributes != null) && (customAttributes.Length > 0))
+                {
+                    result = ((AssemblyProductAttribute)customAttributes[0]).Product;
+                }
             }
+            catch
+            { }
 
-            firstItem.Tag = inlines;
-            firstItem.IsSelected = true;
+            return result;
         }
 
-        void AddProperty(List<Inline> inlines, string propName, object propVal)
+        private static string RenderDictionary(IDictionary data)
         {
-            inlines.Add(new LineBreak());
-            inlines.Add(new LineBreak());
-            var inline = new Bold(new Run(propName+":"));
-            inline.FontSize = _med;
-            inlines.Add(inline);
-            inlines.Add(new LineBreak());
+            StringBuilder result = new StringBuilder();
 
-            if (propVal is string)
+            foreach (object key in data.Keys)
             {
-                // Might have embedded newlines.
+                if (key != null && data[key] != null)
+                {
+                    result.AppendLine(key.ToString() + " = " + data[key].ToString());
+                }
+            }
 
-                AddLines(inlines, propVal as string);
-            }
-            else
-            {
-                inlines.Add(new Run(propVal.ToString()));
-            }
+            if (result.Length > 0) result.Length = result.Length - 1;
+            return result.ToString();
         }
 
-        // Adds the string to the list of Inlines, substituting
-        // LineBreaks for an newline chars found.
-        void AddLines(List<Inline> inlines, string str)
+        private static string RenderEnumerable(IEnumerable data)
         {
-            string[] lines = str.Split('\n');
+            StringBuilder result = new StringBuilder();
 
-            inlines.Add(new Run(lines[0].Trim('\r')));
-
-            foreach (string line in lines.Skip(1))
+            foreach (object obj in data)
             {
-                inlines.Add(new LineBreak());
-                inlines.Add(new Run(line.Trim('\r')));
+                result.AppendFormat("{0}\n", obj);
             }
+
+            if (result.Length > 0) result.Length = result.Length - 1;
+            return result.ToString();
         }
 
         // Adds the exception as a new top-level node to the tree with child nodes
         // for all the exception's properties.
-        void AddException(Exception e)
+        private void AddException(Exception e)
         {
             // Create a list of Inlines containing all the properties of the exception object.
             // The three most important properties (message, type, and stack trace) go first.
@@ -332,81 +282,40 @@ namespace ExceptionViewerDemo
             }
         }
 
-        static string RenderEnumerable(IEnumerable data)
+        // Adds the string to the list of Inlines, substituting
+        // LineBreaks for an newline chars found.
+        private void AddLines(List<Inline> inlines, string str)
         {
-            StringBuilder result = new StringBuilder();
+            string[] lines = str.Split('\n');
 
-            foreach (object obj in data)
+            inlines.Add(new Run(lines[0].Trim('\r')));
+
+            foreach (string line in lines.Skip(1))
             {
-                result.AppendFormat("{0}\n", obj);
-            }
-
-            if (result.Length > 0) result.Length = result.Length - 1;
-            return result.ToString();
-        }
-
-        static string RenderDictionary(IDictionary data)
-        {
-            StringBuilder result = new StringBuilder();
-
-            foreach (object key in data.Keys)
-            {
-                if (key != null && data[key] != null)
-                {
-                    result.AppendLine(key.ToString() + " = " + data[key].ToString());
-                }
-            }
-
-            if (result.Length > 0) result.Length = result.Length - 1;
-            return result.ToString();
-        }
-
-        private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            ShowCurrentItem();
-        }
-
-        void ShowCurrentItem()
-        {
-            if (treeView1.SelectedItem != null)
-            {
-                var inlines = (treeView1.SelectedItem as TreeViewItem).Tag as List<Inline>;
-                var doc = new FlowDocument();
-
-                doc.FontSize = _small;
-                doc.FontFamily = treeView1.FontFamily;
-                doc.TextAlignment = TextAlignment.Left;
-                doc.Background = docViewer.Background;
-
-                if (chkWrap.IsChecked == false)
-                {
-                    doc.PageWidth = CalcNoWrapWidth(inlines) + 50;
-                }
-
-                var para = new Paragraph();
-                para.Inlines.AddRange(inlines);
-                doc.Blocks.Add(para);
-                docViewer.Document = doc;
+                inlines.Add(new LineBreak());
+                inlines.Add(new Run(line.Trim('\r')));
             }
         }
 
-        // Determines the page width for the Inlilness that causes no wrapping.
-        double CalcNoWrapWidth(IEnumerable<Inline> inlines)
+        private void AddProperty(List<Inline> inlines, string propName, object propVal)
         {
-            double pageWidth = 0;
-            var tb = new TextBlock();
-            var size = new Size(double.PositiveInfinity, double.PositiveInfinity);
+            inlines.Add(new LineBreak());
+            inlines.Add(new LineBreak());
+            var inline = new Bold(new Run(propName + ":"));
+            inline.FontSize = _med;
+            inlines.Add(inline);
+            inlines.Add(new LineBreak());
 
-            foreach (Inline inline in inlines)
+            if (propVal is string)
             {
-                tb.Inlines.Clear();
-                tb.Inlines.Add(inline);
-                tb.Measure(size);
+                // Might have embedded newlines.
 
-                if (tb.DesiredSize.Width > pageWidth) pageWidth = tb.DesiredSize.Width;
+                AddLines(inlines, propVal as string);
             }
-
-            return pageWidth;
+            else
+            {
+                inlines.Add(new Run(propVal.ToString()));
+            }
         }
 
         private void btnClose_Click(object sender, RoutedEventArgs e)
@@ -464,6 +373,68 @@ namespace ExceptionViewerDemo
             ShowCurrentItem();
         }
 
+        // Builds the tree in the left pane.
+        // Each TreeViewItem.Tag will contain a list of Inlines
+        // to display in the right-hand pane When it is selected.
+        private void BuildTree(Exception e, string summaryMessage)
+        {
+            // The first node in the tree contains the summary message and all the
+            // nested exception messages.
+
+            var inlines = new List<Inline>();
+            var firstItem = new TreeViewItem();
+            firstItem.Header = "All Messages";
+            treeView1.Items.Add(firstItem);
+
+            var inline = new Bold(new Run(summaryMessage));
+            inline.FontSize = _large;
+            inlines.Add(inline);
+
+            // Now add top-level nodes for each exception while building
+            // the contents of the first node.
+            while (e != null)
+            {
+                inlines.Add(new LineBreak());
+                inlines.Add(new LineBreak());
+                AddLines(inlines, e.Message);
+
+                AddException(e);
+                e = e.InnerException;
+            }
+
+            firstItem.Tag = inlines;
+            firstItem.IsSelected = true;
+        }
+
+        private void CalcMaxTreeWidth()
+        {
+            // This prevents the GridSplitter from being dragged beyond the right edge of the window.
+            // Another way would be to use star sizing for all Grid columns including the left
+            // Grid column (i.e. treeCol), but that causes the width of that column to change when the
+            // window's width changes, which I don't like.
+
+            mainGrid.MaxWidth = ActualWidth - _chromeWidth;
+            treeCol.MaxWidth = mainGrid.MaxWidth - textCol.MinWidth;
+        }
+
+        // Determines the page width for the Inlilness that causes no wrapping.
+        private double CalcNoWrapWidth(IEnumerable<Inline> inlines)
+        {
+            double pageWidth = 0;
+            var tb = new TextBlock();
+            var size = new Size(double.PositiveInfinity, double.PositiveInfinity);
+
+            foreach (Inline inline in inlines)
+            {
+                tb.Inlines.Clear();
+                tb.Inlines.Add(inline);
+                tb.Measure(size);
+
+                if (tb.DesiredSize.Width > pageWidth) pageWidth = tb.DesiredSize.Width;
+            }
+
+            return pageWidth;
+        }
 
         private void chkWrap_Checked(object sender, RoutedEventArgs e)
         {
@@ -483,15 +454,45 @@ namespace ExceptionViewerDemo
             }
         }
 
-        private void CalcMaxTreeWidth()
+        private void ShowCurrentItem()
         {
-            // This prevents the GridSplitter from being dragged beyond the right edge of the window.
-            // Another way would be to use star sizing for all Grid columns including the left 
-            // Grid column (i.e. treeCol), but that causes the width of that column to change when the
-            // window's width changes, which I don't like.
+            if (treeView1.SelectedItem != null)
+            {
+                var inlines = (treeView1.SelectedItem as TreeViewItem).Tag as List<Inline>;
+                var doc = new FlowDocument();
 
-            mainGrid.MaxWidth = ActualWidth - _chromeWidth;
-            treeCol.MaxWidth = mainGrid.MaxWidth - textCol.MinWidth;
+                doc.FontSize = _small;
+                doc.FontFamily = treeView1.FontFamily;
+                doc.TextAlignment = TextAlignment.Left;
+                doc.Background = docViewer.Background;
+
+                if (chkWrap.IsChecked == false)
+                {
+                    doc.PageWidth = CalcNoWrapWidth(inlines) + 50;
+                }
+
+                var para = new Paragraph();
+                para.Inlines.AddRange(inlines);
+                doc.Blocks.Add(para);
+                docViewer.Document = doc;
+            }
+        }
+
+        private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            ShowCurrentItem();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            // The grid column used for the tree started with Width="Auto" so it is now exactly
+            // wide enough to fit the longest exception (up to the MaxWidth set in XAML).
+            // Changing the width to a fixed pixel value prevents it from changing if the user
+            // resizes the window.
+
+            treeCol.Width = new GridLength(treeCol.ActualWidth, GridUnitType.Pixel);
+            _chromeWidth = ActualWidth - mainGrid.ActualWidth;
+            CalcMaxTreeWidth();
         }
     }
 }
