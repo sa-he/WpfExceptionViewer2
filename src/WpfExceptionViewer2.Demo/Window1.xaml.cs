@@ -12,16 +12,18 @@ namespace ExceptionViewerDemo
         public Window1()
         {
             InitializeComponent();
+
+            ExceptionViewer.DefaultTitle = "Sorry";
         }
 
         private void AnotherMethod()
         {
-            int x = 1;
-            int y = 0;
+            var x = 1;
+            var y = 0;
 
             try
             {
-                int z = x / y;
+                var z = x / y;
             }
             catch (Exception ex)
             {
@@ -44,9 +46,14 @@ namespace ExceptionViewerDemo
             }
             catch (Exception ex)
             {
-                ExceptionViewer ev = new ExceptionViewer("An unexpected error occurred in the application.", ex, this);
+                var ev = new ExceptionViewer("An unexpected error occurred in the application.", ex, this);
                 ev.ShowDialog();
             }
+        }
+
+        private void killMe(object sender, RoutedEventArgs e)
+        {
+            SomeMethod();
         }
 
         private void SomeMethod()

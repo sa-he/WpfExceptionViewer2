@@ -8,7 +8,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media;
 
 namespace WpfExceptionViewer2
 {
@@ -54,24 +53,18 @@ namespace WpfExceptionViewer2
             if (owner != null)
             {
                 // This hopefully makes our window look like it belongs to the main app.
-                this.Style = owner.Style;
+                Style = owner.Style;
 
                 // This seems to make the window appear on the same monitor as the owner.
-                this.Owner = owner;
+                Owner = owner;
 
-                this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            }
-
-            if (DefaultPaneBrush != null)
-            {
-                treeView1.Background = DefaultPaneBrush;
+                WindowStartupLocation = WindowStartupLocation.CenterOwner;
             }
 
             docViewer.Background = treeView1.Background;
 
             // We use three font sizes.  The smallest is based on whatever the "standard"
             // size is for the current system/app, taken from an arbitrary control.
-
             _small = treeView1.FontSize;
             _med = _small * 1.1;
             _large = _small * 1.2;
@@ -79,12 +72,6 @@ namespace WpfExceptionViewer2
             Title = DefaultTitle;
 
             BuildTree(e, headerMessage);
-        }
-
-        public static Brush DefaultPaneBrush
-        {
-            get;
-            set;
         }
 
         /// <summary>
@@ -166,13 +153,13 @@ namespace WpfExceptionViewer2
         // Initializes the Product property.
         private static string GetProductName()
         {
-            string result = "";
+            var result = "";
 
             try
             {
-                Assembly _appAssembly = GetAppAssembly();
+                var _appAssembly = GetAppAssembly();
 
-                object[] customAttributes = _appAssembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
+                var customAttributes = _appAssembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
 
                 if ((customAttributes != null) && (customAttributes.Length > 0))
                 {
@@ -187,9 +174,9 @@ namespace WpfExceptionViewer2
 
         private static string RenderDictionary(IDictionary data)
         {
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
 
-            foreach (object key in data.Keys)
+            foreach (var key in data.Keys)
             {
                 if (key != null && data[key] != null)
                 {
@@ -203,9 +190,9 @@ namespace WpfExceptionViewer2
 
         private static string RenderEnumerable(IEnumerable data)
         {
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
 
-            foreach (object obj in data)
+            foreach (var obj in data)
             {
                 result.AppendFormat("{0}\n", obj);
             }
@@ -221,22 +208,24 @@ namespace WpfExceptionViewer2
             // Create a list of Inlines containing all the properties of the exception object.
             // The three most important properties (message, type, and stack trace) go first.
 
-            var exceptionItem = new TreeViewItem();
+            var exceptionItem = CreateNewTreeViewItem();
+
             var inlines = new List<Inline>();
-            System.Reflection.PropertyInfo[] properties = e.GetType().GetProperties();
+            var properties = e.GetType().GetProperties();
 
             exceptionItem.Header = e.GetType();
             exceptionItem.Tag = inlines;
-            treeView1.Items.Add(exceptionItem);
 
-            Inline inline = new Bold(new Run(e.GetType().ToString()));
-            inline.FontSize = _large;
+            Inline inline = new Bold(new Run(e.GetType().ToString()))
+            {
+                FontSize = _large
+            };
             inlines.Add(inline);
 
             AddProperty(inlines, "Message", e.Message);
             AddProperty(inlines, "Stack Trace", e.StackTrace);
 
-            foreach (PropertyInfo info in properties)
+            foreach (var info in properties)
             {
                 // Skip InnerException because it will get a whole
                 // top-level node of its own.
@@ -286,11 +275,11 @@ namespace WpfExceptionViewer2
         // LineBreaks for an newline chars found.
         private void AddLines(List<Inline> inlines, string str)
         {
-            string[] lines = str.Split('\n');
+            var lines = str.Split('\n');
 
             inlines.Add(new Run(lines[0].Trim('\r')));
 
-            foreach (string line in lines.Skip(1))
+            foreach (var line in lines.Skip(1))
             {
                 inlines.Add(new LineBreak());
                 inlines.Add(new Run(line.Trim('\r')));
@@ -301,8 +290,10 @@ namespace WpfExceptionViewer2
         {
             inlines.Add(new LineBreak());
             inlines.Add(new LineBreak());
-            var inline = new Bold(new Run(propName + ":"));
-            inline.FontSize = _med;
+            var inline = new Bold(new Run(propName + ":"))
+            {
+                FontSize = _med
+            };
             inlines.Add(inline);
             inlines.Add(new LineBreak());
 
@@ -320,7 +311,7 @@ namespace WpfExceptionViewer2
 
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void btnCopy_Click(object sender, RoutedEventArgs e)
@@ -355,8 +346,8 @@ namespace WpfExceptionViewer2
             // Now place the doc contents on the clipboard in both
             // rich text and plain text format.
 
-            TextRange range = new TextRange(doc.ContentStart, doc.ContentEnd);
-            DataObject data = new DataObject();
+            var range = new TextRange(doc.ContentStart, doc.ContentEnd);
+            var data = new DataObject();
 
             using (Stream stream = new MemoryStream())
             {
@@ -381,13 +372,15 @@ namespace WpfExceptionViewer2
             // The first node in the tree contains the summary message and all the
             // nested exception messages.
 
-            var inlines = new List<Inline>();
-            var firstItem = new TreeViewItem();
-            firstItem.Header = "All Messages";
-            treeView1.Items.Add(firstItem);
+            var firstItem = CreateNewTreeViewItem();
 
-            var inline = new Bold(new Run(summaryMessage));
-            inline.FontSize = _large;
+            var inlines = new List<Inline>();
+            firstItem.Header = "All Messages";
+
+            var inline = new Bold(new Run(summaryMessage))
+            {
+                FontSize = _large
+            };
             inlines.Add(inline);
 
             // Now add top-level nodes for each exception while building
@@ -404,6 +397,7 @@ namespace WpfExceptionViewer2
 
             firstItem.Tag = inlines;
             firstItem.IsSelected = true;
+            firstItem.Focus();
         }
 
         private void CalcMaxTreeWidth()
@@ -424,7 +418,7 @@ namespace WpfExceptionViewer2
             var tb = new TextBlock();
             var size = new Size(double.PositiveInfinity, double.PositiveInfinity);
 
-            foreach (Inline inline in inlines)
+            foreach (var inline in inlines)
             {
                 tb.Inlines.Clear();
                 tb.Inlines.Add(inline);
@@ -446,6 +440,17 @@ namespace WpfExceptionViewer2
             ShowCurrentItem();
         }
 
+        private TreeViewItem CreateNewTreeViewItem()
+        {
+            var exceptionItem = new TreeViewItem();
+            if (Background is not null)
+                exceptionItem.Background = Background;
+            if (Foreground is not null)
+                exceptionItem.Foreground = Foreground;
+            treeView1.Items.Add(exceptionItem);
+            return exceptionItem;
+        }
+
         private void ExpressionViewerWindow_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (e.WidthChanged)
@@ -459,12 +464,13 @@ namespace WpfExceptionViewer2
             if (treeView1.SelectedItem != null)
             {
                 var inlines = (treeView1.SelectedItem as TreeViewItem).Tag as List<Inline>;
-                var doc = new FlowDocument();
-
-                doc.FontSize = _small;
-                doc.FontFamily = treeView1.FontFamily;
-                doc.TextAlignment = TextAlignment.Left;
-                doc.Background = docViewer.Background;
+                var doc = new FlowDocument
+                {
+                    FontSize = _small,
+                    FontFamily = treeView1.FontFamily,
+                    TextAlignment = TextAlignment.Left,
+                    Background = docViewer.Background
+                };
 
                 if (chkWrap.IsChecked == false)
                 {
