@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,10 +15,6 @@ namespace WpfExceptionViewer
     /// </summary>
     public partial class ExceptionViewer : Window
     {
-        private static string? _defaultTitle;
-
-        private static string? _product;
-
         private double _large;
 
         private double _med;
@@ -71,102 +66,9 @@ namespace WpfExceptionViewer
         }
 
         /// <summary>
-        /// The default title to use for the ExceptionViewer window.  Automatically initialized
-        /// to "Error - [ProductName]" where [ProductName] is taken from the application's
-        /// AssemblyProduct attribute (set in the AssemblyInfo.cs file).  You can change this
-        /// default, or ignore it and set Title yourself before calling ShowDialog().
+        /// The default title to use for the ExceptionViewer window.
         /// </summary>
-        public static string DefaultTitle
-        {
-            get
-            {
-                if (_defaultTitle == null)
-                {
-                    if (string.IsNullOrEmpty(Product))
-                    {
-                        _defaultTitle = "Error";
-                    }
-                    else
-                    {
-                        _defaultTitle = "Error - " + Product;
-                    }
-                }
-
-                return _defaultTitle;
-            }
-
-            set
-            {
-                _defaultTitle = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets the value of the AssemblyProduct attribute of the app.
-        /// If unable to lookup the attribute, returns an empty string.
-        /// </summary>
-        public static string Product
-        {
-            get
-            {
-                if (_product == null)
-                {
-                    _product = GetProductName();
-                }
-
-                return _product;
-            }
-        }
-
-        // Tries to get the assembly to extract the product name from.
-        private static Assembly? GetAppAssembly()
-        {
-            Assembly? _appAssembly = null;
-
-            try
-            {
-                // This is supposedly how Windows.Forms.Application does it.
-                _appAssembly = Application.Current.MainWindow.GetType().Assembly;
-            }
-            catch
-            { }
-
-            // If the above didn't work, try less desireable ways to get an assembly.
-
-            if (_appAssembly == null)
-            {
-                _appAssembly = Assembly.GetEntryAssembly();
-            }
-
-            if (_appAssembly == null)
-            {
-                _appAssembly = Assembly.GetExecutingAssembly();
-            }
-
-            return _appAssembly;
-        }
-
-        // Initializes the Product property.
-        private static string GetProductName()
-        {
-            var result = "";
-
-            try
-            {
-                var _appAssembly = GetAppAssembly();
-
-                var customAttributes = _appAssembly?.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
-
-                if ((customAttributes != null) && (customAttributes.Length > 0))
-                {
-                    result = ((AssemblyProductAttribute)customAttributes[0]).Product;
-                }
-            }
-            catch
-            { }
-
-            return result;
-        }
+        public static string DefaultTitle { get; set; } = "Exception";
 
         private static string RenderDictionary(IDictionary? data)
         {
