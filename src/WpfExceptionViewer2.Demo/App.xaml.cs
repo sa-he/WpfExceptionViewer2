@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using WpfExceptionViewer2;
+using WpfExceptionViewer;
 
 namespace ExceptionViewerDemo
 {

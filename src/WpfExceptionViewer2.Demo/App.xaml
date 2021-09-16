@@ -7,8 +7,19 @@
 
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/WpfExceptionViewer2;component/DarkColors.xaml" />
+
+                <!--  or bright colors  -->
                 <!--<ResourceDictionary Source="pack://application:,,,/WpfExceptionViewer2;component/BrightColors.xaml" />-->
             </ResourceDictionary.MergedDictionaries>
+
+            <!--  or custom colors  -->
+            <!--<SolidColorBrush x:Key="BackgroundBrush"
+                             options:Freeze="True"
+                             Color="Pink" />
+
+            <SolidColorBrush x:Key="ForegroundBrush"
+                             options:Freeze="True"
+                             Color="Green" />-->
         </ResourceDictionary>
     </Application.Resources>
 </Application>

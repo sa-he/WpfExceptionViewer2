@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows;
-using WpfExceptionViewer2;
+using WpfExceptionViewer;
 
 namespace ExceptionViewerDemo
 {

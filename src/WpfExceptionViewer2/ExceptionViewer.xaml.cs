@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 
-namespace WpfExceptionViewer2
+namespace WpfExceptionViewer
 {
     /// <summary>
     /// A WPF window for viewing Exceptions and inner Exceptions, including all their properties.
