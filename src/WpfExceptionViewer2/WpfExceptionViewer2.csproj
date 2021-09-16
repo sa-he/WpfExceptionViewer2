@@ -9,7 +9,7 @@
         <Product>WpfExceptionViewer2</Product>
         <Description>WPF window that shows exception details</Description>
         <Copyright>CPOL</Copyright>
-        <Version>2.0.1</Version>
+        <Version>2.0.2</Version>
         <Authors>MarkLTX, sa.he</Authors>
         <RepositoryUrl>https://github.com/sa-he/WpfExceptionViewer2</RepositoryUrl>
         <RepositoryType>git</RepositoryType>

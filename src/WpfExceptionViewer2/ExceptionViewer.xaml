@@ -4,52 +4,65 @@
         Name="ExpressionViewerWindow"
         Width="800"
         Height="600"
-        MinWidth="350"
-        MinHeight="200"
-        Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource ForegroundBrush}"
-        Loaded="Window_Loaded"
-        SizeChanged="ExpressionViewerWindow_SizeChanged">
+        MinWidth="450"
+        MinHeight="300"
+        Background="{DynamicResource ExceptionViewerBackgroundBrush}"
+        Foreground="{DynamicResource ExceptionViewerForegroundBrush}"
+        WindowStartupLocation="CenterScreen">
     <!--
         Enable the following resources in order to use design time preview.
         Disable it afterwards, in order to enable overwriting of styles by
         consumers.
     -->
     <!--<Window.Resources>
-        <ResourceDictionary Source="Colors.xaml" />
+        <ResourceDictionary Source="DarkColors.xaml" />
     </Window.Resources>-->
 
     <Grid Name="mainGrid"
-          TextBlock.Foreground="{DynamicResource ForegroundBrush}">
+          TextBlock.Foreground="{DynamicResource ExceptionViewerForegroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Name="treeCol"
-                              Width="200"
-                              MinWidth="90"
-                              MaxWidth="400" />
-            <ColumnDefinition Name="textCol"
-                              Width="*"
-                              MinWidth="90" />
+            <ColumnDefinition Width="1*"
+                              MinWidth="150" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="2.5*"
+                              MinWidth="300" />
         </Grid.ColumnDefinitions>
 
         <TreeView Name="treeView1"
-                  Margin="5"
-                  Background="{DynamicResource BackgroundBrush}"
-                  Foreground="{DynamicResource ForegroundBrush}"
+                  Grid.Column="0"
+                  Margin="5,5,0,5"
+                  Background="{DynamicResource ExceptionViewerBackgroundBrush}"
+                  Foreground="{DynamicResource ExceptionViewerForegroundBrush}"
                   SelectedItemChanged="treeView1_SelectedItemChanged"
-                  TextBlock.Foreground="{DynamicResource ForegroundBrush}">
+                  TextBlock.Foreground="{DynamicResource ExceptionViewerForegroundBrush}">
+            <TreeView.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"
+                                 Color="{DynamicResource ExceptionViewerHighlightColor}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"
+                                 Color="{DynamicResource ExceptionViewerForegroundColor}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"
+                                 Color="{DynamicResource ExceptionViewerHighlightColor}" />
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}"
+                                 Color="{DynamicResource ExceptionViewerForegroundColor}" />
+            </TreeView.Resources>
+
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem" />
             </TreeView.ItemContainerStyle>
         </TreeView>
-        <GridSplitter Grid.RowSpan="1"
-                      Width="5"
+
+        <GridSplitter Grid.Column="1"
+                      Width="3"
                       Margin="0,5,0,5"
-                      ResizeBehavior="CurrentAndNext" />
-        <Border Grid.Column="1"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="{DynamicResource ExceptionViewerHighlightBrush}" />
+
+        <Border Grid.Column="2"
                 Margin="0,5,5,5"
                 BorderBrush="{Binding ElementName=treeView1, Path=BorderBrush}"
                 BorderThickness="{Binding ElementName=treeView1, Path=BorderThickness}">
@@ -59,7 +72,7 @@
         </Border>
 
         <Grid Grid.Row="1"
-              Grid.ColumnSpan="2"
+              Grid.ColumnSpan="10"
               HorizontalAlignment="Right">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
@@ -74,7 +87,7 @@
                       Checked="chkWrap_Checked"
                       Content="_Wrap text"
                       IsChecked="True"
-                      TextBlock.Foreground="{DynamicResource ForegroundBrush}"
+                      TextBlock.Foreground="{DynamicResource ExceptionViewerForegroundBrush}"
                       Unchecked="chkWrap_Unchecked" />
             <Button Name="btnCopy"
                     Grid.Column="1"

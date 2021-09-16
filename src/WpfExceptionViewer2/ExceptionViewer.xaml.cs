@@ -20,10 +20,6 @@ namespace WpfExceptionViewer
 
         private static string? _product;
 
-        // This is used to dynamically calculate the mainGrid.MaxWidth when the Window is resized,
-        // since I can't quite get the behavior I want without it.  See CalcMaxTreeWidth().
-        private double _chromeWidth;
-
         private double _large;
 
         private double _med;
@@ -219,6 +215,7 @@ namespace WpfExceptionViewer
             // The three most important properties (message, type, and stack trace) go first.
 
             var exceptionItem = CreateNewTreeViewItem();
+            treeView1.Items.Add(exceptionItem);
 
             var inlines = new List<Inline>();
             var properties = e.GetType().GetProperties();
@@ -269,7 +266,7 @@ namespace WpfExceptionViewer
                         }
 
                         // Create a TreeViewItem for the individual property.
-                        var propertyItem = new TreeViewItem();
+                        var propertyItem = CreateNewTreeViewItem();
                         var propertyInlines = new List<Inline>();
 
                         propertyItem.Header = info.Name;
@@ -388,6 +385,7 @@ namespace WpfExceptionViewer
             // nested exception messages.
 
             var firstItem = CreateNewTreeViewItem();
+            treeView1.Items.Add(firstItem);
 
             var inlines = new List<Inline>();
             firstItem.Header = "All Messages";
@@ -413,17 +411,6 @@ namespace WpfExceptionViewer
             firstItem.Tag = inlines;
             firstItem.IsSelected = true;
             firstItem.Focus();
-        }
-
-        private void CalcMaxTreeWidth()
-        {
-            // This prevents the GridSplitter from being dragged beyond the right edge of the window.
-            // Another way would be to use star sizing for all Grid columns including the left
-            // Grid column (i.e. treeCol), but that causes the width of that column to change when the
-            // window's width changes, which I don't like.
-
-            mainGrid.MaxWidth = ActualWidth - _chromeWidth;
-            treeCol.MaxWidth = mainGrid.MaxWidth - textCol.MinWidth;
         }
 
         // Determines the page width for the Inlilness that causes no wrapping.
@@ -460,21 +447,12 @@ namespace WpfExceptionViewer
 
         private TreeViewItem CreateNewTreeViewItem()
         {
-            var exceptionItem = new TreeViewItem();
+            var newItem = new TreeViewItem();
             if (Background is not null)
-                exceptionItem.Background = Background;
+                newItem.Background = Background;
             if (Foreground is not null)
-                exceptionItem.Foreground = Foreground;
-            treeView1.Items.Add(exceptionItem);
-            return exceptionItem;
-        }
-
-        private void ExpressionViewerWindow_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (e.WidthChanged)
-            {
-                CalcMaxTreeWidth();
-            }
+                newItem.Foreground = Foreground;
+            return newItem;
         }
 
         private void ShowCurrentItem()
@@ -505,18 +483,6 @@ namespace WpfExceptionViewer
         private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             ShowCurrentItem();
-        }
-
-        private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-            // The grid column used for the tree started with Width="Auto" so it is now exactly
-            // wide enough to fit the longest exception (up to the MaxWidth set in XAML).
-            // Changing the width to a fixed pixel value prevents it from changing if the user
-            // resizes the window.
-
-            treeCol.Width = new GridLength(treeCol.ActualWidth, GridUnitType.Pixel);
-            _chromeWidth = ActualWidth - mainGrid.ActualWidth;
-            CalcMaxTreeWidth();
         }
     }
 }
