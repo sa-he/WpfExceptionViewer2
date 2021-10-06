@@ -31,5 +31,5 @@ Nuget: https://www.nuget.org/packages/WpfExceptionViewer2 \
 
 ### Invoke Dialog
 
-    WpfExceptionViewer2.ExceptionViewer.DefaultTitle = "Sorry";
-    new WpfExceptionViewer2.ExceptionViewer(ex.Message, ex).Show();
+    WpfExceptionViewer.ExceptionViewer.DefaultTitle = "Sorry";
+    new WpfExceptionViewer.ExceptionViewer(ex.Message, ex).Show();
